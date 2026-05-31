@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航空发动机涡轮叶片冷却模拟</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>航空发动机涡轮叶片冷却模拟系统</h1>
+            <p class="subtitle">Turbine Blade Cooling Simulation System</p>
+        </header>
+
+        <div class="main-content">
+            <div class="canvas-section">
+                <div class="canvas-wrapper">
+                    <canvas id="bladeCanvas" width="800" height="600"></canvas>
+                    <div class="canvas-overlay">
+                        <div class="temperature-legend">
+                            <div class="legend-title">温度图例 (°C)</div>
+                            <div class="legend-bar">
+                                <div class="legend-gradient"></div>
+                                <div class="legend-labels">
+                                    <span id="tempMin">200</span>
+                                    <span id="tempMax">1200</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="film-legend">
+                            <div class="legend-title">气膜覆盖</div>
+                            <div class="legend-bar">
+                                <div class="legend-gradient-film"></div>
+                                <div class="legend-labels">
+                                    <span>无</span>
+                                    <span>完全</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="view-controls">
+                    <button id="btnTempView" class="view-btn active">温度场</button>
+                    <button id="btnFilmView" class="view-btn">气膜覆盖</button>
+                    <button id="btnCombinedView" class="view-btn">组合视图</button>
+                    <button id="btnSaveSnapshot" class="save-btn">保存快照</button>
+                    <button id="btnLoadSnapshot" class="load-btn">加载历史</button>
+                    <button id="btnMonitor" class="monitor-btn">在线监测</button>
+                    <button id="btnOptimize" class="optimize-btn">孔位优化</button>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <div class="panel-section">
+                    <h2>工况参数设置</h2>
+                    
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">主流温度 (°C)</span>
+                            <span class="value-display" id="mainstreamTempValue">1000</span>
+                        </label>
+                        <input type="range" id="mainstreamTemp" min="500" max="1500" value="1000" step="10">
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">冷气流量 (kg/s)</span>
+                            <span class="value-display" id="coolantFlowValue">0.05</span>
+                        </label>
+                        <input type="range" id="coolantFlow" min="0.01" max="0.2" value="0.05" step="0.005">
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">冷气温度 (°C)</span>
+                            <span class="value-display" id="coolantTempValue">300</span>
+                        </label>
+                        <input type="range" id="coolantTemp" min="100" max="500" value="300" step="10">
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">主流压力 (MPa)</span>
+                            <span class="value-display" id="mainstreamPressureValue">2.0</span>
+                        </label>
+                        <input type="range" id="mainstreamPressure" min="0.5" max="5.0" value="2.0" step="0.1">
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">冷气压力 (MPa)</span>
+                            <span class="value-display" id="coolantPressureValue">2.5</span>
+                        </label>
+                        <input type="range" id="coolantPressure" min="0.6" max="6.0" value="2.5" step="0.1">
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">叶片材料</span>
+                        </label>
+                        <select id="bladeMaterial">
+                            <option value="nickel_alloy">镍基合金</option>
+                            <option value="cmsx_4">CMSX-4 单晶</option>
+                            <option value="rené_n5">René N5</option>
+                            <option value="ceramic">陶瓷基复合材料</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>
+                            <span class="label-text">气膜孔数量</span>
+                            <span class="value-display" id="holeCountValue">24</span>
+                        </label>
+                        <input type="range" id="holeCount" min="12" max="48" value="24" step="2">
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2>实时计算结果</h2>
+                    
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="result-label">平均温度</span>
+                            <span class="result-value" id="avgTemp">--</span>
+                            <span class="result-unit">°C</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">最高温度</span>
+                            <span class="result-value" id="maxTemp">--</span>
+                            <span class="result-unit">°C</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">最低温度</span>
+                            <span class="result-value" id="minTemp">--</span>
+                            <span class="result-unit">°C</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">冷却效率</span>
+                            <span class="result-value" id="coolingEfficiency">--</span>
+                            <span class="result-unit">%</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">热通量</span>
+                            <span class="result-value" id="heatFlux">--</span>
+                            <span class="result-unit">MW/m²</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">气膜覆盖率</span>
+                            <span class="result-value" id="filmCoverage">--</span>
+                            <span class="result-unit">%</span>
+                        </div>
+                    </div>
+                    
+                    <h3 style="font-size: 0.9rem; color: #94a3b8; margin: 15px 0 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">冷却评估指标</h3>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <span class="result-label">展向平均η</span>
+                            <span class="result-value" id="spanwiseEta">--</span>
+                            <span class="result-unit">%</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">弦向平均η</span>
+                            <span class="result-value" id="chordwiseEta">--</span>
+                            <span class="result-unit">%</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">吹风比 M</span>
+                            <span class="result-value" id="blowingRatio">--</span>
+                            <span class="result-unit">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">脱离状态</span>
+                            <span class="result-value" id="detachmentStatus">--</span>
+                            <span class="result-unit">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h2>模拟控制</h2>
+                    <div class="simulation-controls">
+                        <button id="btnStart" class="control-btn start">开始模拟</button>
+                        <button id="btnPause" class="control-btn pause" disabled>暂停</button>
+                        <button id="btnReset" class="control-btn reset">重置</button>
+                    </div>
+                    <div class="simulation-status">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="statusText">就绪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="snapshotModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>历史快照</h2>
+                    <button class="close-btn" id="closeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="snapshotList" class="snapshot-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="monitorModal" class="modal hidden">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>冷却效率在线监测</h2>
+                    <button class="close-btn" id="closeMonitorModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="monitor-section">
+                        <h3>实时指标</h3>
+                        <div class="monitor-grid">
+                            <div class="monitor-card">
+                                <div class="monitor-label">平均温度</div>
+                                <div class="monitor-value" id="monitorAvgTemp">--</div>
+                                <div class="monitor-unit">°C</div>
+                            </div>
+                            <div class="monitor-card">
+                                <div class="monitor-label">冷却效率</div>
+                                <div class="monitor-value" id="monitorEfficiency">--</div>
+                                <div class="monitor-unit">%</div>
+                            </div>
+                            <div class="monitor-card">
+                                <div class="monitor-label">热通量</div>
+                                <div class="monitor-value" id="monitorHeatFlux">--</div>
+                                <div class="monitor-unit">MW/m²</div>
+                            </div>
+                            <div class="monitor-card">
+                                <div class="monitor-label">吹风比 M</div>
+                                <div class="monitor-value" id="monitorBlowingRatio">--</div>
+                                <div class="monitor-unit">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="monitor-section">
+                        <h3>运行状态</h3>
+                        <div id="monitorStatus" class="monitor-status">
+                            <span class="status-badge success">系统正常</span>
+                        </div>
+                    </div>
+                    <div class="monitor-section">
+                        <h3>警告信息</h3>
+                        <div id="monitorWarnings" class="monitor-warnings">
+                            <p class="no-warnings">暂无警告</p>
+                        </div>
+                    </div>
+                    <div class="monitor-actions">
+                        <button id="btnRefreshMonitor" class="control-btn start">刷新数据</button>
+                        <button id="btnAutoMonitor" class="control-btn">自动监测: 关</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="optimizeModal" class="modal hidden">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>孔位优化建议</h2>
+                    <button class="close-btn" id="closeOptimizeModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="optimize-section">
+                        <h3>目标设置</h3>
+                        <div class="optimize-target">
+                            <label>目标冷却效率: </label>
+                            <input type="range" id="targetEfficiency" min="10" max="50" value="30" step="1">
+                            <span id="targetEfficiencyValue">30%</span>
+                        </div>
+                        <button id="btnRunOptimization" class="control-btn start">运行优化分析</button>
+                    </div>
+                    <div id="optimizeResults" class="optimize-results hidden">
+                        <div class="optimize-section">
+                            <h3>推荐方案</h3>
+                            <div id="optimizeRecommendation" class="recommendation-card"></div>
+                        </div>
+                        <div class="optimize-section">
+                            <h3>参数化研究</h3>
+                            <div id="parametricStudy" class="parametric-table"></div>
+                        </div>
+                        <div class="optimize-section">
+                            <h3>优化建议</h3>
+                            <div id="optimizeSuggestions" class="suggestions-list"></div>
+                        </div>
+                        <div class="optimize-section">
+                            <h3>权衡分析</h3>
+                            <div id="tradeoffAnalysis" class="tradeoff-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bladeGeometry.js"></script>
+    <script src="js/filmCoverageModel.js"></script>
+    <script src="js/coolingModel.js"></script>
+    <script src="js/visualization.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

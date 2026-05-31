@@ -1,0 +1,15 @@
+{
+  "name": "turbine-blade-cooling-simulation",
+  "version": "1.0.0",
+  "description": "航空发动机涡轮叶片冷却模拟全栈应用",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5"
+  }
+}
